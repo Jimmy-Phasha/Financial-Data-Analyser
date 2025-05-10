@@ -58,10 +58,30 @@ df = pd.concat([March_df,April_df], ignore_index=True) #append the 2 dataframes
 #clean Amount column & create credit and debit columns
 df['CleanAmount'] = df['Amount'].str.replace('C','',regex=False)
 df['CleanAmount'] = df['CleanAmount'].str.replace(',','',regex=False).astype(float)
-df['Credit'] = df.apply(
-    lambda row: row['CleanAmount'] if any(x in str(row['Amount']) for x in ['C', 'Cr']) else 0, axis=1) 
 df['Debit'] = df.apply(
+    lambda row: row['CleanAmount'] if any(x in str(row['Amount']) for x in ['C', 'Cr']) else 0, axis=1) 
+df['Credit'] = df.apply(
     lambda row: row['CleanAmount'] if all(x not in str(row['Amount']) for x in ['C', 'Cr']) else 0, axis=1)
-print(df)
 #drop clean amount
 df.drop(columns='CleanAmount', inplace=True)
+
+#Categorize spending
+category_keywords = { #category dictionary
+    'Savings_Transfer': ['transfer from'],
+    'Groceries': ['spar','shoprite','purchase auditor general', 'pedros'],
+    'Transport': ['gautrain', 'vuyo','bolt'],
+    'Subcriptions': ['netflix', 'microsoft', 'purchase payflex', 'rain'],
+    'Family': ['to lebo', 'to sesi pheladi', 'to sechaba'],
+    'savings': ['stokvel'],
+    'Matita': ['bobo' "naledi's mom",'send money app']
+    
+}
+#everything works fine, just need to categorize using amounts
+def categorize(description):
+    desc = str(description).lower()
+    for category, keywords in category_keywords.items():
+        if any(keyword in desc for keyword in keywords):
+            return category
+    return 'Other' #default if no match
+
+df['Category'] = df['Description'].apply(categorize)
