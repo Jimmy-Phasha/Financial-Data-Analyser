@@ -1,5 +1,4 @@
 import pandas as pd
-import re
 
 class FinanceAgent:
     #constructor
@@ -18,9 +17,6 @@ class FinanceAgent:
         df['CleanAmount'] = df['Amount'].str.replace('C','',regex=False).astype(float)
         df['Credit'] = df.apply(lambda row: row['CleanAmount'] if 'C' in row['Amount'] else 0, axis=1)
         df['Debit'] = df.apply(lambda row: row['CleanAmount'] if 'C' not in row['Amount'] else 0, axis=1)
-
-        #drop clean amount
-        df.drop(columns='CleanAmount', inplace=True)
 
         df['Amount'] = pd.to_numeric(df['Amount'])
         self.expenses = df.groupby('Category')['Amount'].sum().to_dict()
