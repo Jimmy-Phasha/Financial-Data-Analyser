@@ -1,96 +1,63 @@
 import pandas as pd
 
-class FinanceAgent:
-    #constructor
-    def __init__(self, budget):
-        self.budget = budget
-        self.expenses = {}
+class FinancialAgent:
+    def __init__(self):
+        self.df = pd.DataFrame() #holds processed DataFrame
 
-    def perceive(self, transactions):
-        #Read and understand transaction data
-        #df = pd.DataFrame(transactions)
-        April_df = pd.read_excel("April Bank Statement.xlsx")
-        March_df = pd.read_excel("March Bank statement.xlsx")
-        df = pd.concat([March_df,April_df], ignore_index=True) #append the 2 dataframes
+        #Categorization rules
+        self.catefory_keywords = {
+            'Savings_Transfer': ['transfer from', 'payment to investment'],
+            'Groceries': ['spar', 'shoprite'],
+            'Take-Out': ['pedros', 'chicken'],
+            'Lunch': ['purchase auditor general'],
+            'Transport': ['gautrain', 'vuyo', 'bolt'],
+            'Subcriptions': ['netflix', 'microsoft', 'purchase payflex', 'rain'],
+            'Family': ['to lebo', 'to sesi pheladi', 'to sechaba'],
+            'savings': ['stokvel'],
+            'Matita': ['bobo', "naledi's mom", 'send money app', 'naledi'],
+            'Salary': ['magtape credit stansal n984auditor-general']
+        }
 
-        #clean Amount column & create credit and debit columns
-        df['CleanAmount'] = df['Amount'].str.replace('C','',regex=False).astype(float)
-        df['Credit'] = df.apply(lambda row: row['CleanAmount'] if 'C' in row['Amount'] else 0, axis=1)
-        df['Debit'] = df.apply(lambda row: row['CleanAmount'] if 'C' not in row['Amount'] else 0, axis=1)
+        self.amount_category = {
+            115.00: 'Monthly charges',
+            8.00: 'Charges'
+        }
 
-        df['Amount'] = pd.to_numeric(df['Amount'])
-        self.expenses = df.groupby('Category')['Amount'].sum().to_dict()
-        return self.expenses
+    def load_files(self,file_paths):
+        #Load and merge multiple bank statements
+        dfs = [pd.read_excel(path) for path in file_paths]
+        self.df = pd.concat(dfs, ignore_index=True)
+    
+    def clean_data(self):
+        #Clean statements/df
+        df= self.df.copy()
 
-    def decide(self):
-        #Check if you're over budget
-        total_spent = sum(self.expenses.values())
-        if total_spent > self.budget:
-            return f"⚠️ Alert: You've overspent! Total spent: ${total_spent:.2f}"
-        else:
-            return f"✅ You're within budget. Total spent: ${total_spent:.2f}"
+        df['CleanAmount'] = df['Amount'].astype(str)
+        df['CleanAmount'] = df['CleanAmount'].str.replace('C', '', regex=False)
+        df['CleanAmount'] = df['CleanAmount'].str.replace(',','',regex=False).astype(float)
 
-    def act(self, decision):
-        #Take action based on the decision
-        print(decision)
+        df['Credit'] = df.apply(lambda row: row['CleanAmount'] if any(x in str(row['Amount']) for x in ['C', 'Cr']) else 0, axis=1) 
+        df['Debit'] = df.apply(lambda row: row['CleanAmount'] if all(x not in str(row['Amount']) for x in ['C', 'Cr']) else 0, axis=1)
 
-# === Example Usage ===
-transactions = [
-    {'Category': 'Food', 'Amount': '250'},
-    {'Category': 'Transport', 'Amount': '100'},
-    {'Category': 'Entertainment', 'Amount': '180'},
-]
+        self.df = df
 
-#agent = FinanceAgent(budget=500)
-#state = agent.perceive(transactions)
-#decision = agent.decide()
-#agent.act(decision)
+    def categorize_transactions(self):
+        #Categorize transactions
+        def categorize(row):
+            desc = str(row['Description']).lower()
+            amount = row['CleanAmount']
 
-April_df = pd.read_excel("April Bank Statement.xlsx")
-March_df = pd.read_excel("March Bank statement.xlsx")
-df = pd.concat([March_df,April_df], ignore_index=True) #append the 2 dataframes
-#print(df) 
-
-#clean Amount column & create credit and debit columns
-df['CleanAmount'] = df['Amount'].str.replace('C','',regex=False)
-df['CleanAmount'] = df['CleanAmount'].str.replace(',','',regex=False).astype(float)
-df['Credit'] = df.apply(
-    lambda row: row['CleanAmount'] if any(x in str(row['Amount']) for x in ['C', 'Cr']) else 0, axis=1) 
-df['Debit'] = df.apply(
-    lambda row: row['CleanAmount'] if all(x not in str(row['Amount']) for x in ['C', 'Cr']) else 0, axis=1)
-#drop clean amount
-#df.drop(columns='CleanAmount', inplace=True)
-
-#Categorize spending
-category_keywords = { #category dictionary
-    'Savings_Transfer': ['transfer from', 'payment to investment'],
-    'Groceries': ['spar','shoprite'],
-    'Take-Out': ['pedros','chicken'],
-    'Lunch': ['purchase auditor general'],
-    'Transport': ['gautrain', 'vuyo','bolt'],
-    'Subcriptions': ['netflix', 'microsoft', 'purchase payflex', 'rain'],
-    'Family': ['to lebo', 'to sesi pheladi', 'to sechaba'],
-    'savings': ['stokvel'],
-    'Matita': ['bobo' "naledi's mom",'send money app','naledi'],
-    'Salary': ['magtape credit stansal n984auditor-general']    
-}
-amount_category = {
-    115.00: 'Monthly charges',
-    8.00: 'Charges'
-}
-#everything works fine, just need to categorize using amounts
-def categorize(row):
-    desc = str(row['Description']).lower()
-    amount = row['CleanAmount']
-    #Match by exact amount
-    if amount in amount_category:
-        return amount_category[amount]
-    #Match using description
-    for category, keywords in category_keywords.items():
-        if any(keyword in desc for keyword in keywords):
-            return category
-    return 'Other' #default if no match
-
-df['Category'] = df.apply(categorize, axis=1)
-df.to_excel('output.xlsx')
-print('done')
+            if amount in self.amount_category:
+                return self.amount_category[amount]
+            
+            for category, keywords in self.catefory_keywords.items():
+                if any(keyword in desc for keyword in keywords):
+                    return category
+            
+            return 'Other'
+        
+        self.df['Category'] = self.df.apply(categorize, axis=1)
+    
+    def export_to_excel(self, output_path='output.xlsx'):
+        self.df.to_excel(output_path, index=False)
+        print(f"Exported cleaned data to {output_path}")
