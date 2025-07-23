@@ -7,11 +7,12 @@ The app allows users to upload monthly bank statements, which are then cleaned a
 
 ## ✨ Features
 
-- 📂 Upload and process monthly bank statements (CSV/Excel)
-- 🤖 Automatically cleans and categorizes transaction data
-- 📊 Exports a clean, merged Excel file for Power BI
-- 💻 Simple and intuitive desktop interface built with Tkinter
-- 📦 Packaged as a standalone `.exe` for Windows (coming soon)
+📂 Upload one or more Excel (.xlsx) bank statement files
+🧹 Automatically cleans and standardizes transaction data
+🏷️ Categorizes transactions using keyword-based rules
+📤 Exports a clean, categorized version to Excel
+📊 Designed for integration with Power BI dashboards
+💻 User-friendly interface built with Tkinter
 
 ---
 
@@ -27,17 +28,24 @@ The app allows users to upload monthly bank statements, which are then cleaned a
 
 ## ⚙️ How It Works
 
-1. Launch the app.
-2. Upload one or more bank statement files.
-3. Click **Process**.
-4. Receive a clean Excel output, ready for visualization or reporting.
+1. Launch the application on tkinter.py.
+2. Click the **Upload & Process** button.
+3. Select your Excel bank statement files.
+4. The app loads, cleans, and categorizes the transactions.
+5. The processed data is exported to an Excel file.
+6. Use the exported file to create reports and dashboards in Power BI or other tools.
 
 ---
 
 ## 🛠 Installation & Usage
 
-> Until the executable is available, run via Python:
+- Python 3.8 or higher installed on your machine.
+- Required Python packages: pandas, openpyxl
 
+
+### Install dependencies
 ```bash
+pip install pandas openpyxl
+
 git clone https://github.com/Jimmy-Phasha/Financial-Data-Analyzer.git
-python app.py
+python tkinter.py
